@@ -1,56 +1,45 @@
-# file: mental_health_counselor_loop.py
-
+from flask import Flask, request, jsonify
 import openai
 import configparser
+from flask_cors import CORS
 
+app = Flask(__name__)
+CORS(app)  # Enable CORS
 
 # Load API key from properties file
 config = configparser.ConfigParser()
 config.read('../config/zen.properties')
 openai.api_key = config['openai']['api_key']
-initial_prompt = config['openai']['initial_prompt']
-
+print("api_key is ", openai.api_key)
 
 def get_advice(messages):
     response = openai.chat.completions.create(
-        model="gpt-4",  # Specify the OpenAI model (e.g., 'gpt-4' or 'gpt-3.5-turbo')
+        model="gpt-4",
         messages=messages,
         temperature=0.7,
         max_tokens=150
     )
-    return response.choices[0].message.content
+    content= response.choices[0].message.content
+    print("content is ", content)
+    return content
 
+@app.route('/chat', methods=['POST'])
 
-def start_conversation():
-    print("Welcome to the mental health counselor. Type 'exit' to end the conversation.")
+def chat():
+    print("request is ", request)
+    data = request.json
+    user_input = data.get('user_input', '')
+    print("data is", data)
+    messages = data.get('messages')
 
-    # Initialize the conversation with a system prompt
-    messages = [
-        {"role": "system", "content": initial_prompt}
-    ]
-    print("You asked:", initial_prompt)
+    if user_input.lower() == "exit":
+        return jsonify({"response": "Ending the conversation. Take care!"})
 
-    while True:
-        # Get user input
-        user_input = input("You: ")
+    # messages.append({"role": "user", "content": user_input})
+    ai_response = get_advice(messages)
+    messages.append({"role": "assistant", "content": ai_response})
 
-        # Check if the user wants to exit
-        if user_input.lower() == "exit":
-            print("Ending the conversation. Take care!")
-            break
+    return jsonify({"response": ai_response, "messages": messages})
 
-        # Append the user message to the conversation history
-        messages.append({"role": "user", "content": user_input})
-
-        # Get advice from the AI based on conversation history
-        ai_response = get_advice(messages)
-
-        # Append AI response to the conversation history
-        messages.append({"role": "assistant", "content": ai_response})
-
-        # Print the AI's response
-        print("Counselor:", ai_response)
-
-
-if __name__ == "__main__":
-    start_conversation()
+if __name__ == '__main__':
+    app.run(debug=True, port=5001)
