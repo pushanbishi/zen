@@ -1,9 +1,9 @@
 import requests
 import json
 import configparser
-import openai
 
-url = "http://127.0.0.1:5000/chat"
+
+url = "http://127.0.0.1:5001/chat"
 headers = {"Content-Type": "application/json"}
 
 # Load API key from properties file

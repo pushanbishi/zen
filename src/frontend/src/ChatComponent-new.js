@@ -1,40 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import './css/ChatComponent.css'; // Import the CSS file
 
 const ChatComponent = () => {
-  const [messages, setMessages] = useState([]);
+
+  const initial_prompt = axios.get('http://127.0.0.1:5001/config?key=initial_prompt').data;
+
+  const [messages, setMessages] = useState([{ role: 'system', content: initial_prompt }]);
   const [userInput, setUserInput] = useState('');
-  const [initialPromptFetched, setInitialPromptFetched] = useState(false);
-
-  useEffect(() => {
-    const fetchInitialPrompt = async () => {
-      try {
-        const response = await axios.get('http://127.0.0.1:5001/config?key=initial_prompt');
-        const initialPrompt = response.data;
-        const initialMessages = [{ role: 'system', content: initialPrompt }];
-
-        // Call the /chat service with the initial prompt
-        const chatResponse = await axios.post('http://127.0.0.1:5001/chat', {
-          //user_input: '',
-          messages: initialMessages,
-        });
-
-        console.log('Initial chat response:', chatResponse.data);
-
-        const { response: aiResponse, messages: updatedMessages } = chatResponse.data;
-        setMessages(updatedMessages.filter(msg => msg.role !== 'system'));
-        setInitialPromptFetched(true);
-      } catch (error) {
-        console.error('Error fetching initial prompt:', error);
-      }
-    };
-
-    if (!initialPromptFetched) {
-      fetchInitialPrompt();
-    }
-  }, [initialPromptFetched]);
-
   const handleSend = async () => {
     if (userInput.toLowerCase() === 'exit') {
       alert('Ending the conversation. Take care!');
@@ -53,7 +26,7 @@ const ChatComponent = () => {
       });
 
       const { response: aiResponse, messages: updatedMessages } = response.data;
-      setMessages(updatedMessages.filter(msg => msg.role !== 'system'));
+      setMessages(updatedMessages);
       setUserInput('');
     } catch (error) {
       console.error('Error sending message:', error);

@@ -4,15 +4,12 @@ import configparser
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS
-
-# Load API key from properties file
-config = configparser.ConfigParser()
-config.read('../config/zen.properties')
-openai.api_key = config['openai']['api_key']
-print("api_key is ", openai.api_key)
+CORS(app)  # Enable CORS for all routes
 
 def get_advice(messages):
+    openai.api_key = config('api_key')
+    print("api_key is ", openai.api_key)
+    print("message calling create is ", messages)
     response = openai.chat.completions.create(
         model="gpt-4",
         messages=messages,
@@ -34,12 +31,28 @@ def chat():
 
     if user_input.lower() == "exit":
         return jsonify({"response": "Ending the conversation. Take care!"})
+    elif user_input.lower() != '':
+        messages.append({"role": "user", "content": user_input})
 
-    # messages.append({"role": "user", "content": user_input})
+
     ai_response = get_advice(messages)
     messages.append({"role": "assistant", "content": ai_response})
 
     return jsonify({"response": ai_response, "messages": messages})
+
+@app.route('/config', methods=['GET'])
+def get_config_route():
+    key = request.args.get('key')
+    value = config(key)
+    return value
+
+def config(key: str):
+    configuration = configparser.ConfigParser()
+    configuration.read('../config/zen.properties')
+    value = configuration['openai'][key]
+    print("value for key", key, "is", value)
+    return value
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
