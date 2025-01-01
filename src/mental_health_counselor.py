@@ -11,22 +11,23 @@ def get_advice(messages):
     print("api_key is ", openai.api_key)
     print("message calling create is ", messages)
     response = openai.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o",
         messages=messages,
         temperature=0.7,
         max_tokens=150
     )
+    print("response from create is ", response.model_dump_json())
     content= response.choices[0].message.content
     print("content is ", content)
     return content
 
 @app.route('/chat', methods=['POST'])
-
 def chat():
     print("request is ", request)
     data = request.json
-    user_input = data.get('user_input', '')
     print("data is", data)
+    user_input = data.get('user_input', '')
+    print("user_input is", user_input)
     messages = data.get('messages')
 
     if user_input.lower() == "exit":
@@ -50,7 +51,6 @@ def config(key: str):
     configuration = configparser.ConfigParser()
     configuration.read('../config/zen.properties')
     value = configuration['openai'][key]
-    print("value for key", key, "is", value)
     return value
 
 

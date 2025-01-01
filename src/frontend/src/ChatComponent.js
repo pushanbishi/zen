@@ -12,7 +12,9 @@ const ChatComponent = () => {
       try {
         const response = await axios.get('http://127.0.0.1:5001/config?key=initial_prompt');
         const initialPrompt = response.data;
+        console.log('Initial prompt response:', initialPrompt);
         const initialMessages = [{ role: 'system', content: initialPrompt }];
+        console.log('initialMessages :', initialMessages);
 
         // Call the /chat service with the initial prompt
         const chatResponse = await axios.post('http://127.0.0.1:5001/chat', {
@@ -23,7 +25,11 @@ const ChatComponent = () => {
         console.log('Initial chat response:', chatResponse.data);
 
         const { response: aiResponse, messages: updatedMessages } = chatResponse.data;
+        //console.log('response is:', aiResponse);
+        //console.log('messages is:', updatedMessages);
         setMessages(updatedMessages.filter(msg => msg.role !== 'system'));
+        //console.log('messages after filter:', updatedMessages);
+
         setInitialPromptFetched(true);
       } catch (error) {
         console.error('Error fetching initial prompt:', error);
@@ -41,19 +47,21 @@ const ChatComponent = () => {
       return;
     }
 
-    const newMessages = [...messages, { role: 'user', content: userInput }];
-    setMessages(newMessages);
 
     try {
-      console.log('Sending message:', userInput);
-      console.log('Sending newMessages:', newMessages);
+      //console.log('Sending message:', userInput);
+      //console.log('Sending messages:', messages);
       const response = await axios.post('http://127.0.0.1:5001/chat', {
         user_input: userInput,
-        messages: newMessages,
+        messages: messages,
       });
 
+      //console.log('----Before Adding  to messages --- 2 ', messages.length);
       const { response: aiResponse, messages: updatedMessages } = response.data;
+      //console.log('Messages from response.data:----2', updatedMessages);
       setMessages(updatedMessages.filter(msg => msg.role !== 'system'));
+      //console.log('----After Adding  to messages --- 2 ', messages.length);
+      //console.log('Messages after filtering:', messages);
       setUserInput('');
     } catch (error) {
       console.error('Error sending message:', error);
