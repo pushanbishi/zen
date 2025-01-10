@@ -12,9 +12,9 @@ const ChatComponent = () => {
       try {
         const response = await axios.get('http://127.0.0.1:5001/config?key=initial_prompt');
         const initialPrompt = response.data;
-        console.log('Initial prompt response:', initialPrompt);
+        //console.log('Initial prompt response:', initialPrompt);
         const initialMessages = [{ role: 'system', content: initialPrompt }];
-        console.log('initialMessages :', initialMessages);
+        //console.log('initialMessages :', initialMessages);
 
         // Call the /chat service with the initial prompt
         const chatResponse = await axios.post('http://127.0.0.1:5001/chat', {
@@ -22,7 +22,7 @@ const ChatComponent = () => {
           messages: initialMessages,
         });
 
-        console.log('Initial chat response:', chatResponse.data);
+        //console.log('Initial chat response:', chatResponse.data);
 
         const { response: aiResponse, messages: updatedMessages } = chatResponse.data;
         //console.log('response is:', aiResponse);
