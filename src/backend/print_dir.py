@@ -8,5 +8,5 @@ def print_directory_structure(root_dir, indent=''):
             print_directory_structure(item_path, indent + '    ')
 
 if __name__ == '__main__':
-    root_directory = '../config'
+    root_directory = '../../config'
     print_directory_structure(root_directory)

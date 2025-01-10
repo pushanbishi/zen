@@ -9,16 +9,18 @@ CORS(app)  # Enable CORS for all routes
 def get_advice(messages):
     openai.api_key = config('api_key')
     print("api_key is ", openai.api_key)
-    print("message calling create is ", messages)
+    #print("message calling create is ", messages)
     response = openai.chat.completions.create(
         model="gpt-4o",
         messages=messages,
-        temperature=0.7,
-        max_tokens=150
+        temperature=0.2,
+        max_completion_tokens=10000
     )
     print("response from create is ", response.model_dump_json())
+    print("prompt_tokens from create is ", response.usage.prompt_tokens)
+    print("completion_tokens from create is ", response.usage.completion_tokens)
     content= response.choices[0].message.content
-    print("content is ", content)
+    #print("content is ", content)
     return content
 
 @app.route('/chat', methods=['POST'])
@@ -49,7 +51,7 @@ def get_config_route():
 
 def config(key: str):
     configuration = configparser.ConfigParser()
-    configuration.read('../config/zen.properties')
+    configuration.read('../../config/zen.properties')
     value = configuration['openai'][key]
     return value
 
