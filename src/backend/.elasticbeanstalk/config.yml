@@ -1,0 +1,22 @@
+branch-defaults:
+  default:
+    environment: zen-production
+    group_suffix: null
+environment-defaults:
+  zen-production:
+    branch: null
+    repository: null
+global:
+  application_name: zen-backend
+  branch: null
+  default_ec2_keyname: pushanaws
+  default_platform: Python 3.12 running on 64bit Amazon Linux 2023
+  default_region: us-east-1
+  include_git_submodules: true
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  profile: eb-cli
+  repository: null
+  sc: null
+  workspace_type: Application
