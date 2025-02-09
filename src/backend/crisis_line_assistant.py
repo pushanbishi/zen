@@ -1,3 +1,5 @@
+from typing import List
+
 from flask import Flask, request, jsonify
 import openai
 import configparser
