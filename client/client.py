@@ -9,16 +9,19 @@ headers = {"Content-Type": "application/json"}
 # Load API key from properties file
 config = configparser.ConfigParser()
 config.read('../config/zen.properties')
-initial_prompt = config['openai']['initial_prompt']
+sys_prompt = config['perplexity']['system_prompt']
+user_prompt = config['perplexity']['user_prompt']
 #print("initial_prompt:: ", initial_prompt)
 
 # Initialize conversation history
-messages = [{"role": "system", "content": initial_prompt}]
-user_input = ""
+messages = [{"role": "system", "content": sys_prompt}]
+#user_input = "Hello, I am a volunteer with a crisis help line and need help finding some information a caller needs. Is it ok if I ask you a few questions?"
+messages.append({"role": "user", "content": user_prompt})
+
 # Send request to the server
 print("messages before first call:: ", messages)
-response = requests.post(url, headers=headers, data=json.dumps({"user_input": user_input, "messages": messages}))
-print("response after first call:: ", response.json())
+response = requests.post(url, headers=headers, data=json.dumps({"user_input": user_prompt, "messages": messages}))
+print("response after first call:: ", response)
 response_data = response.json()
 ai_response = response_data["response"]
 messages = response_data["messages"]
