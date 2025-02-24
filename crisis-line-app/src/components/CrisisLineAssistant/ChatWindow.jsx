@@ -1,11 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './ChatWindow.css';
 
+const formatMessage = (content) => {
+  return content
+    // Convert newlines to <br> tags
+    .split('\n')
+    .map((line, i) => (
+      <React.Fragment key={i}>
+        {/* Handle bullet points and numbered lists */}
+        {line.match(/^[•\-\d]+\.?\s/) 
+          ? <div className="list-item">{line}</div>
+          : line}
+        <br />
+      </React.Fragment>
+    ));
+};
+
 const ChatWindow = ({ onClose }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState('');
+  const [defaultPrompt, setDefaultPrompt] = useState('');
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -13,20 +29,28 @@ const ChatWindow = ({ onClose }) => {
   };
 
   useEffect(() => {
-    // Only fetch and store system prompt, don't show any messages yet
-    const fetchSystemPrompt = async () => {
+    // Fetch both system prompt and default AI prompt
+    const fetchPrompts = async () => {
       try {
-        const sysPromptResponse = await fetch('http://localhost:5001/config?key=system_prompt');
+        const [sysPromptResponse, defaultPromptResponse] = await Promise.all([
+          fetch('http://localhost:5001/config?key=system_prompt'),
+          fetch('http://localhost:5001/config?key=default_ai_prompt')
+        ]);
+
         const sysPrompt = await sysPromptResponse.text();
+        const defaultPrompt = await defaultPromptResponse.text();
+
         setSystemPrompt(sysPrompt);
+        setDefaultPrompt(defaultPrompt);
+        
         // Start with just the welcome message
         setMessages([{
           role: 'assistant',
-          content: 'Hello! How can I help you today?'
+          content: defaultPrompt
         }]);
       } catch (error) {
-        console.error('Error fetching system prompt:', error);
-        // If error, still show welcome message
+        console.error('Error fetching prompts:', error);
+        // If error,  show harcoded welcome message
         setMessages([{
           role: 'assistant',
           content: 'Hello! How can I help you today?'
@@ -34,7 +58,7 @@ const ChatWindow = ({ onClose }) => {
       }
     };
 
-    fetchSystemPrompt();
+    fetchPrompts();
   }, []);
 
   useEffect(() => {
@@ -68,9 +92,7 @@ const ChatWindow = ({ onClose }) => {
       });
 
       const data = await response.json();
-      // Only add the new messages (user input and assistant response)
-      const newMessages = data.messages.slice(-2);
-      setMessages(prev => [...prev, ...newMessages]);
+      setMessages(data.messages.filter(msg => msg.role !== 'system'));
       setInputMessage('');
     } catch (error) {
       console.error('Error:', error);
@@ -96,7 +118,7 @@ const ChatWindow = ({ onClose }) => {
             key={index} 
             className={`message ${message.role === 'user' ? 'user-message' : 'assistant-message'}`}
           >
-            {message.content}
+            {formatMessage(message.content)}
           </div>
         ))}
         {isLoading && (
