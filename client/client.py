@@ -10,17 +10,21 @@ headers = {"Content-Type": "application/json"}
 config = configparser.ConfigParser()
 config.read('../config/zen.properties')
 sys_prompt = config['perplexity']['system_prompt']
-user_prompt = config['perplexity']['user_prompt']
-#print("initial_prompt:: ", initial_prompt)
+default_ai_prompt = config['perplexity']['default_ai_prompt']
 
+print(f"AI: {default_ai_prompt}")
 # Initialize conversation history
 messages = [{"role": "system", "content": sys_prompt}]
-#user_input = "Hello, I am a volunteer with a crisis help line and need help finding some information a caller needs. Is it ok if I ask you a few questions?"
-messages.append({"role": "user", "content": user_prompt})
+
+user_input = input("You: ")
+if user_input.lower() == "exit":
+    print("Ending the conversation. Take care!")
+    exit()
+   
 
 # Send request to the server
 print("messages before first call:: ", messages)
-response = requests.post(url, headers=headers, data=json.dumps({"user_input": user_prompt, "messages": messages}))
+response = requests.post(url, headers=headers, data=json.dumps({"user_input": user_input, "messages": messages}))
 print("response after first call:: ", response)
 response_data = response.json()
 ai_response = response_data["response"]
@@ -37,8 +41,8 @@ while True:
         break
 
     # Add user input to messages
-    messages.append({"role": "user", "content": user_input})
-    print("messages:: ", messages)
+    #messages.append({"role": "user", "content": user_input})
+    #print("messages:: ", messages)
 
     # Send request to the server
     response = requests.post(url, headers=headers, data=json.dumps({"user_input": user_input, "messages": messages}))

@@ -4,7 +4,6 @@ from flask import Flask, request, jsonify
 from openai import OpenAI
 import configparser
 from flask_cors import CORS
-from googleapiclient.discovery import build
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -21,7 +20,7 @@ client = OpenAI(api_key=api_key, base_url="https://api.perplexity.ai")
 
 def get_advice(messages):
 
-    print("api_key is ", api_key)
+    #print("api_key is ", api_key)
     print("message calling create is ", messages)
     response = client.chat.completions.create(
         model="sonar-pro",
@@ -36,11 +35,11 @@ def get_advice(messages):
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    print("request is ", request)
+    #print("request is ", request)
     data = request.json
-    print("data is", data)
+    #print("data is", data)
     user_input = data.get('user_input', '')
-    print("user_input is", user_input)
+    #print("user_input is", user_input)
 
     messages = data.get('messages')
 
