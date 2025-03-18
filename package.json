@@ -1,5 +1,9 @@
 {
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+  },
+  "scripts": {
+    "build": "REACT_APP_API_URL=https://your-api.com npm run build",
+    "build:prod": "REACT_APP_API_URL=https://your-prod-api.com npm run build"
   }
 }

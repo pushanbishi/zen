@@ -1,0 +1,15 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParameter"
+            ],
+            "Resource": [
+                "arn:aws:ssm:*:*:parameter/myapp/secrets/*",
+                "arn:aws:ssm:*:*:parameter/myapp/config/*"
+            ]
+        }
+    ]
+}
