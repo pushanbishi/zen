@@ -9,8 +9,8 @@ headers = {"Content-Type": "application/json"}
 # Load API key from properties file
 config = configparser.ConfigParser()
 config.read('../config/zen.properties')
-sys_prompt = config['perplexity']['system_prompt']
-default_ai_prompt = config['perplexity']['default_ai_prompt']
+sys_prompt = config['crisis_line_assistant.local']['system_prompt']
+default_ai_prompt = config['crisis_line_assistant.local']['default_ai_prompt']
 
 print(f"AI: {default_ai_prompt}")
 # Initialize conversation history

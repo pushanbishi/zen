@@ -72,11 +72,7 @@ try:
     client = OpenAI(api_key=api_key, base_url="https://api.perplexity.ai")
 except Exception as e:
     print(f"Error initializing configuration: {e}")
-    print(e.print_exc())
    
-    client = OpenAI(api_key=api_key, base_url="https://api.perplexity.ai")
-
-
 client = OpenAI(api_key=api_key, base_url="https://api.perplexity.ai")
 
 
@@ -87,7 +83,7 @@ def get_advice(messages):
         model="sonar-pro",
         messages=messages,
     )
-    print("response from create is ", response.model_dump_json())
+    #print("response from create is ", response.model_dump_json())
     content= response.choices[0].message.content
     #print("content is ", content)
     return content
@@ -100,7 +96,7 @@ def chat():
     data = request.json
     #print("data is", data)
     user_input = data.get('user_input', '')
-    print("user_input is", user_input)
+    #print("user_input is", user_input)
 
     messages = data.get('messages')
 
@@ -109,7 +105,7 @@ def chat():
     else:
         messages.append({"role": "user", "content": user_input})
 
-    print("messages before get_advice is ", messages)
+    #rint("messages before get_advice is ", messages)
     ai_response = get_advice(messages)
 
     messages.append({"role": "assistant", "content": ai_response})
