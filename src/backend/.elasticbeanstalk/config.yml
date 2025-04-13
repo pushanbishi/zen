@@ -1,6 +1,6 @@
 branch-defaults:
   default:
-    environment: null
+    environment: crisisline-prod
     group_suffix: null
 environment-defaults:
   crisisline-prod:

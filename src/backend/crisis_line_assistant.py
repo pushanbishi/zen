@@ -13,42 +13,55 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 def fetch_config(key: str):
+    print("fetching config for key ", key)
     """Get configuration from AWS Parameter Store or local file based on environment"""
     # Check environment variable to determine running mode
     env = os.environ.get('APP_ENV', 'local').lower()  # Default to local if not set
-    
+    print("env is ", env)
+
     try:
         if env == 'test':
-            # Read from AWS Parameter Store for test environment
-            ssm = boto3.client('ssm', region_name='us-east-1')
-            response = ssm.get_parameter(
-                Name='/myapp/config/test/zen-properties'
-            )
-            # Parse the JSON response
-            config_json = json.loads(response['Parameter']['Value'])
-            # Access the nested 'crisis_line_assistant' dictionary
-            return config_json['crisis_line_assistant'][key]
-        
+            # Set parameter store name for test environment
+            parameter_name = '/myapp/config/test/zen-properties'
         elif env == 'production':
-            # Read from AWS Parameter Store for production environment
+            # Set parameter store name for production environment
+            parameter_name = '/myapp/config/production/zen-properties'
+        
+        if env in ['test', 'production']:
+            print(f"Attempting to fetch from AWS Parameter Store: {parameter_name}")
+            # Read from AWS Parameter Store
             ssm = boto3.client('ssm', region_name='us-east-1')
             response = ssm.get_parameter(
-                Name='/myapp/config/production/zen-properties'
+                Name=parameter_name
             )
+            print("Got response from Parameter Store")
             # Parse the JSON response
             config_json = json.loads(response['Parameter']['Value'])
-            # Access the nested 'crisis_line_assistant' dictionary
-            return config_json['crisis_line_assistant'][key]
-        
-        else:
+            print("Parsed JSON response")
+            value = config_json['crisis_line_assistant'][key]
+            value = value.replace('\\\n', '').replace('\\', '')
+            print("value from config_json is ", value)
+            return value
+        elif env == 'local' or env == None:
+            print("Reading from local properties file")
             # Read from local properties file
             configuration = configparser.ConfigParser()
             configuration.read('../../config/zen.properties')
             section = 'crisis_line_assistant.local'
-            return configuration[section][key]
+            value = configuration[section][key]
+            print("value before cleaning is ", value)
+            # Clean up the value by removing backslashes and joining lines
+            value = value.replace('\\\n', '').replace('\\', '')
+            print("value after cleaning is ", value)
+            return value
+        else:
+            raise ValueError(f"Invalid environment: {env}")
             
     except Exception as e:
-        print(f"Error getting parameter {key}: {e}")
+        print(f"Error getting parameter {key}: {str(e)}")
+        print(f"Error type: {type(e)}")
+        import traceback
+        print(f"Full traceback: {traceback.format_exc()}")
         raise e
 
 @app.route('/config', methods=['GET'])
@@ -60,25 +73,30 @@ def get_config():
     
     try:
         value = fetch_config(key)
-        return value
+        return jsonify({"value": value})  # Wrap the value in a JSON response
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 # Initialize with safer defaults
 try:
-    api_key = fetch_config('api_key')
-    system_prompt = fetch_config('system_prompt')
-    default_ai_prompt = fetch_config('default_ai_prompt')
+    print("Starting configuration initialization...")
+    # Get API key from configuration
+    api_key = fetch_config('api_key').strip()
+    print("api_key is ", api_key)
+    # Initialize OpenAI client with Perplexity base URL
     client = OpenAI(api_key=api_key, base_url="https://api.perplexity.ai")
+    print("client is ", client)
 except Exception as e:
-    print(f"Error initializing configuration: {e}")
+    print(f"Error initializing configuration: {str(e)}")
+    print(f"Error type: {type(e)}")
+    import traceback
+    print(f"Full traceback: {traceback.format_exc()}")
    
-client = OpenAI(api_key=api_key, base_url="https://api.perplexity.ai")
-
 
 def get_advice(messages):
 
-    print("message calling create is ", messages)
+    print("client before call is", client.api_key , "and model is ")
+    #print("message calling create is ", messages)
     response = client.chat.completions.create(
         model="sonar-pro",
         messages=messages,
@@ -92,7 +110,6 @@ def get_advice(messages):
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    #print("request is ", request)
     data = request.json
     #print("data is", data)
     user_input = data.get('user_input', '')

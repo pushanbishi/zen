@@ -1,16 +1,27 @@
 import requests
 import json
-import configparser
 
 
-url = "http://127.0.0.1:5001/chat"
+
+url = "http://127.0.0.1:5001"
 headers = {"Content-Type": "application/json"}
 
-# Load API key from properties file
-config = configparser.ConfigParser()
-config.read('../config/zen.properties')
-sys_prompt = config['crisis_line_assistant.local']['system_prompt']
-default_ai_prompt = config['crisis_line_assistant.local']['default_ai_prompt']
+# Get configuration from server
+try:
+    response = requests.get(f"{url}/config", params={"key": 'system_prompt'}, headers=headers)
+     
+    #print("response:: ", response.json())
+    
+    config_data = response.json()
+    sys_prompt = config_data['value']
+    
+    response = requests.get(f"{url}/config", params={"key": 'default_ai_prompt'}, headers=headers)
+    config_data = response.json()
+     
+    default_ai_prompt = config_data['value']
+except Exception as e:
+    print(f"Error fetching configuration: {e}")
+    raise e
 
 print(f"AI: {default_ai_prompt}")
 # Initialize conversation history
@@ -24,7 +35,7 @@ if user_input.lower() == "exit":
 
 # Send request to the server
 print("messages before first call:: ", messages)
-response = requests.post(url, headers=headers, data=json.dumps({"user_input": user_input, "messages": messages}))
+response = requests.post(f"{url}/chat", headers=headers, data=json.dumps({"user_input": user_input, "messages": messages}))
 print("response after first call:: ", response)
 response_data = response.json()
 ai_response = response_data["response"]
@@ -45,7 +56,7 @@ while True:
     #print("messages:: ", messages)
 
     # Send request to the server
-    response = requests.post(url, headers=headers, data=json.dumps({"user_input": user_input, "messages": messages}))
+    response = requests.post(f"{url}/chat", headers=headers, data=json.dumps({"user_input": user_input, "messages": messages}))
     print("response:: ", response)
     # Get the response from the server
     response_data = response.json()
