@@ -1,0 +1,53 @@
+Parameters:
+  AWSEBDomainName:
+    Type: String
+    Default: crisisline-prod.eba-uw3rhnsu.us-east-1.elasticbeanstalk.com
+  AWSEBHostedZoneId:
+    Type: String
+    Default: Z2FDTNDATAQYW2 # This is the default Route 53 hosted zone ID for Elastic Beanstalk
+
+option_settings:
+  aws:elb:listener:443:
+    ListenerEnabled: 'true'
+    Protocol: HTTPS
+    SSLCertificateId: arn:aws:acm:us-east-1:222634403344:certificate/70ade259-b7b5-40ac-a56c-28c3b7a4a6be
+
+Resources:
+  AWSEBCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: crisisline.letsfindyourzen.com
+      ValidationMethod: dns
+      DomainValidationOptions:
+        - DomainName: crisisline.letsfindyourzen.com
+          HostedZoneId: Z2FDTNDATAQYW2
+
+  AWSEBAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LoadBalancerNames:
+        - {"Ref": "AWSEBLoadBalancer"}
+      MinSize: 1
+      MaxSize: 4
+      DesiredCapacity: 1
+
+  AWSEBLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Listeners:
+        - LoadBalancerPort: 80
+          InstancePort: 80
+          Protocol: HTTP
+        - LoadBalancerPort: 443
+          InstancePort: 443
+          Protocol: HTTPS
+          SSLCertificateId: {"Ref": "AWSEBCertificate"}
+
+  sslSecurityGroupIngress: 
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: {"Ref": "AWSEBSecurityGroup"}
+      IpProtocol: tcp
+      ToPort: 443
+      FromPort: 443
+      CidrIp: 0.0.0.0/0 
