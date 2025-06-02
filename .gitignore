@@ -5,3 +5,11 @@
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+
+# macOS system files
+.DS_Store
+**/.DS_Store
+
+# Log files
+*.log
+logfile.txt

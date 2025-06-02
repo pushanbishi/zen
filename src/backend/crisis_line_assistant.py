@@ -9,15 +9,30 @@ import json
 import os
 import traceback
 from botocore.exceptions import ClientError
+import logging
+import uuid
+from datetime import datetime
+from dotenv import load_dotenv
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Try to load .env file but don't fail if it doesn't exist
+load_dotenv(override=True)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+env = os.environ.get('APP_ENV', 'local').lower()
 
 def fetch_config(key: str):
     #print("fetching config for key ", key)
     """Get configuration from AWS Parameter Store or local file based on environment"""
     # Check environment variable to determine running mode
-    env = os.environ.get('APP_ENV', 'local').lower()  # Default to local if not set
+    #env = os.environ.get('APP_ENV', 'local').lower()  # Default to local if not set
     #print("env is ", env)
 
     try:
@@ -28,6 +43,7 @@ def fetch_config(key: str):
             # Set parameter store name for production environment
             parameter_name = '/myapp/config/production/zen-properties'
         
+        logger.info(f"Fetching configuration for key: {key} in environment: {env}")
         if env in ['test', 'production']:
             #print(f"Attempting to fetch from AWS Parameter Store: {parameter_name}")
             # Read from AWS Parameter Store
@@ -109,26 +125,88 @@ def get_advice(messages):
     # If no tool calls or different tool, return the regular content
     return message.content
 
+# Initialize S3 client
+s3 = boto3.client('s3')
+
+def save_conversation_to_s3(conversation_id, messages):
+    try:
+        # Get bucket name from environment variable
+        bucket_name = os.environ.get('CONVERSATION_BUCKET')
+        logger.info(f"Saving conversation {conversation_id} to S3 bucket: {bucket_name}")
+        if not bucket_name:
+            logger.error("CONVERSATION_BUCKET environment variable not set")
+            return
+
+        # Prepare conversation data
+        conversation_data = {
+            'conversation_id': conversation_id,
+            'timestamp': datetime.utcnow().isoformat(),
+            'messages': messages
+        }
+
+        # Save to S3
+        s3.put_object(
+            Bucket=bucket_name,
+            Key=f'conversations/{conversation_id}.json',
+            Body=json.dumps(conversation_data, indent=2),
+            ContentType='application/json'
+        )
+        logger.info(f"Saved conversation {conversation_id} to S3")
+    except Exception as e:
+        logger.error(f"Error saving conversation to S3: {str(e)}")
+        logger.error(traceback.format_exc())
+
 @app.route('/chat', methods=['POST'])
 def chat():
-    data = request.json
-    #print("data is", data)
-    user_input = data.get('user_input', '')
-    #print("user_input is", user_input)
+    try:
+        data = request.get_json()
+        user_input = data.get('user_input', '')
+        messages = data.get('messages', [])
+        parameters = data.get('parameters', {})
+        
+        logger.info(f"Received chat request with input: {user_input}")
+        logger.debug(f"Messages: {messages}")
+        logger.debug(f"Parameters: {parameters}")
 
-    messages = data.get('messages')
+        # Generate a unique conversation ID if this is the first message
+        if not messages:
+            conversation_id = str(uuid.uuid4())
+        else:
+            # Extract conversation ID from the first message
+            conversation_id = messages[0].get('conversation_id', str(uuid.uuid4()))
 
-    if user_input.lower() == "exit":
-        return jsonify({"response": "Ending the conversation. Take care!"})
-    else:
-        messages.append({"role": "user", "content": user_input})
+        # Add conversation ID to messages if not present
+        if not any('conversation_id' in msg for msg in messages):
+            for msg in messages:
+                msg['conversation_id'] = conversation_id
 
-    print("CONVERSATION:: User Input is ", user_input)
-    ai_response = get_advice(messages)
-    print("CONVERSATION:: ai_response is ", ai_response)
-    messages.append({"role": "assistant", "content": ai_response})
+        if user_input.lower() == "exit":
+            return jsonify({"response": "Ending the conversation. Take care!"})
+        else:
+            messages.append({"role": "user", "content": user_input})
 
-    return jsonify({"response": ai_response, "messages": messages})
+        print("CONVERSATION:: User Input is ", user_input)
+        ai_response = get_advice(messages)
+        print("CONVERSATION:: ai_response is ", ai_response)
+        messages.append({"role": "assistant", "content": ai_response})
+
+        # After getting the AI response, save the conversation
+        logger.info(f"Environment is {env}")
+        if env == 'production':
+            logger.info(f"Saving conversation {conversation_id} to S3")
+            save_conversation_to_s3(conversation_id, messages)
+        else:
+            logger.info(f"Not saving conversation {conversation_id} to S3 in non-production environment")
+
+        return jsonify({
+            "response": ai_response,
+            "messages": messages,
+            "conversation_id": conversation_id
+        })
+    except Exception as e:
+        logger.error(f"Error in chat endpoint: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/')
 def index():
