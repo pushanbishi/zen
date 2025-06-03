@@ -1,7 +1,7 @@
 # Zen
 
 ## Project Description
-Zen is a backend application that provides a chatbot API to help users find their zen. The application is built using Flask and integrates with OpenAI (Perplexity) for chat responses. It supports AWS S3 for conversation storage in production environments and uses AWS Parameter Store or local configuration for settings management.
+Zen is a backend application that provides a chatbot API to help users find their zen. The application is built using Flask and integrates with Perplexity AI for chat responses. It supports AWS S3 for conversation storage in production environments and uses AWS Parameter Store or local configuration for settings management.
 
 ## Features
 - Chatbot API endpoint
@@ -15,7 +15,6 @@ Zen is a backend application that provides a chatbot API to help users find thei
 - Perplexity AI
 - AWS S3
 - AWS Parameter Store
-
 
 ## Getting Started
 
@@ -50,10 +49,27 @@ Zen is a backend application that provides a chatbot API to help users find thei
 - For S3 conversation storage, set the `CONVERSATION_BUCKET` environment variable (production only).
 
 ### Running the Application
+To run the main Flask application:
 ```bash
 python crisis_line_assistant.py
 ```
 The app will run on port 5001 by default.
+
+### Running the Client
+The client is located in the `src/client/` directory. To run the client:
+1. Navigate to the client directory:
+    ```bash
+    cd zen/src/client
+    ```
+2. Install the client dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3. Run the client script:
+    ```bash
+    python client.py
+    ```
+   This will start the client, which can interact with the backend API.
 
 ## API Endpoints
 - `POST /chat`: Send chat messages and receive responses.
@@ -62,15 +78,11 @@ The app will run on port 5001 by default.
 ## Project Structure
 - `src/backend/crisis_line_assistant.py`: Main Flask application.
 - `src/backend/config/`: Configuration helpers and policies.
+- `src/client/`: Client code for interacting with the backend.
 - `config/zen.properties`: Local configuration file.
 - `src/backend/test/`: Backend tests.
 
-## Testing
-To run backend tests:
-```bash
-# (from src/backend/)
-python -m unittest discover test
-```
+
 
 ## .gitignore
 The `.gitignore` file is used to specify which files and directories should be ignored by Git, such as virtual environments and credentials.
